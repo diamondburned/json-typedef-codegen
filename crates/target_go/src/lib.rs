@@ -186,11 +186,7 @@ impl jtd_codegen::target::Target for Target {
 
                 writeln!(out)?;
                 writeln!(out, "const (")?;
-                for (index, member) in members.into_iter().enumerate() {
-                    if index != 0 {
-                        writeln!(out)?;
-                    }
-
+                for (_, member) in members.into_iter().enumerate() {
                     write!(
                         out,
                         "{}",
@@ -216,11 +212,7 @@ impl jtd_codegen::target::Target for Target {
                 writeln!(out)?;
                 write!(out, "{}", description(&metadata, 0))?;
                 writeln!(out, "type {} struct {{", name)?;
-                for (index, field) in fields.into_iter().enumerate() {
-                    if index != 0 {
-                        writeln!(out)?;
-                    }
-
+                for (_, field) in fields.into_iter().enumerate() {
                     write!(out, "{}", description(&field.metadata, 1))?;
 
                     if field.optional {
@@ -343,11 +335,7 @@ impl jtd_codegen::target::Target for Target {
                 writeln!(out)?;
                 write!(out, "{}", description(&metadata, 0))?;
                 writeln!(out, "type {} struct {{", name)?;
-                for (index, field) in fields.into_iter().enumerate() {
-                    if index != 0 {
-                        writeln!(out)?;
-                    }
-
+                for (_, field) in fields.into_iter().enumerate() {
                     write!(out, "{}", description(&field.metadata, 1))?;
 
                     if field.optional {
