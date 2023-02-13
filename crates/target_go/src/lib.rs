@@ -259,27 +259,25 @@ impl jtd_codegen::target::Target for Target {
                 writeln!(out)?;
                 write!(out, "{}", description(&metadata, 0))?;
                 writeln!(out, "type {} struct {{", name)?;
-                writeln!(out, "\t{} string", tag_field_name)?;
+                writeln!(out, "\t// Value can be the following types:")?;
                 for variant in &variants {
-                    writeln!(out)?;
-                    writeln!(out, "\t{} {}", &variant.field_name, &variant.type_name)?;
+                    writeln!(out, "\t//  - [{}] ({})", &variant.type_name, &variant.tag_value)?;
                 }
+                writeln!(out, "\tValue value{}", name)?;
+                writeln!(out)?;
+                writeln!(out, "\tt string")?;
                 writeln!(out, "}}")?;
 
                 writeln!(out)?;
                 writeln!(out, "func (v {}) MarshalJSON() ([]byte, error) {{", name)?;
-                writeln!(out, "\tswitch v.{} {{", tag_field_name)?;
+                writeln!(out, "\tswitch value := v.Value.(type) {{")?;
                 for variant in &variants {
-                    writeln!(out, "\tcase {:?}:", variant.tag_value)?;
-                    writeln!(out, "\t\treturn json.Marshal(struct {{ T string `json:\"{}\"`; {} }}{{ v.{}, v.{} }})", tag_json_name, variant.type_name, tag_field_name, variant.field_name)?;
+                    writeln!(out, "\tcase {}:", variant.type_name)?;
+                    writeln!(out, "\t\treturn json.Marshal(struct {{ T string `json:\"{}\"`; {} }}{{ {:?}, value }})", tag_json_name, variant.type_name, variant.tag_value)?;
                 }
+                writeln!(out, "\tdefault:")?;
+                writeln!(out, "\t\tpanic(\"unreachable\")")?;
                 writeln!(out, "\t}}")?;
-                writeln!(out)?;
-                writeln!(
-                    out,
-                    "\treturn nil, fmt.Errorf(\"bad {0} value: %s\", v.{0})",
-                    tag_field_name
-                )?;
                 writeln!(out, "}}")?;
 
                 writeln!(out)?;
@@ -293,15 +291,15 @@ impl jtd_codegen::target::Target for Target {
                 writeln!(out, "\t\treturn err")?;
                 writeln!(out, "\t}}")?;
                 writeln!(out)?;
+                writeln!(out, "\tvar value value{}", name)?;
                 writeln!(out, "\tvar err error")?;
+                writeln!(out)?;
                 writeln!(out, "\tswitch t.T {{")?;
                 for variant in &variants {
                     writeln!(out, "\tcase {:?}:", variant.tag_value)?;
-                    writeln!(
-                        out,
-                        "\t\terr = json.Unmarshal(b, &v.{})",
-                        variant.field_name
-                    )?;
+                    writeln!(out, "\t\tvar v {}", variant.type_name)?;
+                    writeln!(out, "\t\terr = json.Unmarshal(b, &v)")?;
+                    writeln!(out, "\t\tvalue = v")?;
                 }
                 writeln!(out, "\tdefault:")?;
                 writeln!(
@@ -315,9 +313,19 @@ impl jtd_codegen::target::Target for Target {
                 writeln!(out, "\t\treturn err")?;
                 writeln!(out, "\t}}")?;
                 writeln!(out)?;
-                writeln!(out, "\tv.{} = t.T", tag_field_name)?;
+                writeln!(out, "\tv.t = t.T")?;
+                writeln!(out, "\tv.Value = value")?;
                 writeln!(out, "\treturn nil")?;
                 writeln!(out, "}}")?;
+
+                writeln!(out)?;
+                writeln!(out, "type value{} interface {{", name)?;
+                writeln!(out, "\tis{}()", name)?;
+                writeln!(out, "}}")?;
+                writeln!(out)?;
+                for variant in &variants {
+                    writeln!(out, "func ({}) is{}() {{}}", variant.type_name, name)?;
+                }
 
                 None
             }
